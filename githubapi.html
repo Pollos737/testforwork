@@ -1,119 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Test Project</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href='https://fonts.googleapis.com/css?family=Aldrich' rel='stylesheet' type='text/css'>
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script>
-    var names = [];
-    var avatars = [];
-    var repNames = [];
-    var name, avatar, repName;
-    var url = "https://api.github.com/repositories";
+    <title>Test Project</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Aldrich' rel='stylesheet' type='text/css'>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script>
+        var names = [];
+        var avatars = [];
+        var repNames = [];
+        var name, avatar, repName, currentOwnerLogin;
+        var url = "https://api.github.com/repositories";
 
-    function sortTable(f, n) {
-      var rows = $("#display_table tbody tr").get();
+        function sortTable(f, n) {
+            var rows = $("#display_table tbody tr").get();
 
-      rows.sort(function(a, b){
-        var A = getVal(a);
-        var B = getVal(b);
-        if(A < B) {
-          return -1*f;
+            rows.sort(function(a, b){
+                var A = getVal(a);
+                var B = getVal(b);
+                if(A < B) {
+                    return -1*f;
+                }
+                if(A > B) {
+                    return 1*f;
+                }
+                return 0;
+            });
+            function getVal(element){
+                var v = $(element).children('td').eq(n).text().toUpperCase();
+                if($.isNumeric(v)){
+                    v = parseInt(v, 10);
+                }
+                return v;
+            }
+            $.each(rows, function(index, row) {
+                $('#display_table').children('tbody').append(row);
+            });
         }
-        if(A > B) {
-          return 1*f;
+        $(document).ready(function() {
+            $.getJSON(url, function(data) {
+                for(var i = 0; i < data.length; i++){
+                    currentOwnerLogin = data[i].owner.login;
+                    if(names.join(",").indexOf(currentOwnerLogin) == -1) {
+                        names[i] = data[i].owner.login;
+                        avatars[i] = data[i].owner.avatar_url;
+                    }
+                    repNames[i] = data[i].name;
+                    repName = repNames[i];
+                    name = names[i];
+                    avatar = avatars[i];
+                }
+                names = names.filter(function (name) {
+                    return name != "undefined";
+                });
+                avatars = avatars.filter(function (avatar) {
+                    return avatar != "undefined";
+                });
+                for(i = 0; i < names.length; i ++){
+                    repName = repNames[i];
+                    name = names[i];
+                    avatar = avatars[i];
+                    $("#display_table").append("<tr id="+ i +">" +
+                            "<td><img src="+avatar+"></td>" +
+                            "<td class='nameTD'>"+name+"</td>" +
+                            "<td class='repNameTD'>"+repName+"</td></tr>");
+                }
+            });
+            var f_name = -1;
+            var f_repname = -1;
+            $("#names").click(function(){
+                f_name *= -1;
+                var n = $(this).prevAll().length;
+                sortTable(f_name,n);
+                if($(".glyphicon:first").hasClass("glyphicon-sort-by-alphabet")){
+                    $(".glyphicon:first").toggleClass("glyphicon-sort-by-alphabet-alt");
+                } else {
+                    $(".glyphicon:first").toggleClass("glyphicon-sort-by-alphabet");
+                }
+            });
+            $("#rep_names").click(function(){
+                f_repname *= -1;
+                var n = $(this).prevAll().length;
+                sortTable(f_repname,n);
+                if($("#secondIcon").hasClass("glyphicon-sort-by-alphabet")){
+                    $("#secondIcon").toggleClass("glyphicon-sort-by-alphabet-alt");
+                } else {
+                    $("#secondIcon").toggleClass("glyphicon-sort-by-alphabet");
+                }
+            });
+        });
+    </script>
+    <style>
+        body {
+            background-color: #999999;
+            font-family: 'Aldrich', sans-serif;
+            font-size: 20px;
         }
-        return 0;
-      });
-
-      function getVal(element){
-        var v = $(element).children('td').eq(n).text().toUpperCase();
-        if($.isNumeric(v)){
-          v = parseInt(v, 10);
+        img {
+            display: block;
+            margin: auto;
+            background-repeat: no-repeat;
+            background-position: 50%;
+            border-radius: 50%;
+            height: 100px;
+            width: 100px;
         }
-        return v;
-      }
-
-      $.each(rows, function(index, row) {
-        $('#display_table').children('tbody').append(row);
-      });
-    }
-    $(document).ready(function() {
-      $.getJSON(url, function(data) {
-        for(var i = 0; i < data.length; i++){
-          names[i] = data[i].owner.login;
-          avatars[i] = data[i].owner.avatar_url;
-          repNames[i] = data[i].name;
-
-          repName = repNames[i];
-          name = names[i];
-          avatar = avatars[i];
-          $("#display_table").append("<tr id="+ i +">" +
-                                     "<td><img src="+avatar+" height='150px' width='150px'></td>" +
-                                     "<td id='name'"+i+">"+name+"</td>" +
-                                     "<td>"+repName+"</td></tr>");
+        table {
+            margin: auto;
+            background-color: white;
+            margin-top: 20px;
+            border: 3px solid #ffc72c !important;
+            width: 90%;
         }
-      });
 
-      var f_name = 1;
-      var f_repname = 1;
-
-      $("#names").click(function(){
-        f_name *= -1;
-        var n = $(this).prevAll().length;
-        sortTable(f_name,n);
-      });
-
-      $("#rep_names").click(function(){
-        f_repname *= -1;
-        var n = $(this).prevAll().length;
-        sortTable(f_repname,n);
-      });
-    });
-  </script>
-  <style>
-    body {
-      background-color: #999999;
-      font-family: 'Aldrich', sans-serif;
-      font-size: 20px;
-    }
-    img {
-      display: block;
-      margin: auto;
-    }
-    table {
-      margin: auto;
-      background-color: white;
-      margin-top: 20px;
-      border: 3px solid #ffc72c !important;
-    }
-    th {
-      text-align: center;
-    }
-    #table_headers {
-      background-color: #041e42;
-      color: white;
-    }
-    #rep_names:hover, #names:hover {
-      background-color: #ffc72c;
-    }
-  </style>
+        #table_headers {
+            background-color: #041e42;
+            color: white;
+        }
+        #rep_names:hover, #names:hover {
+            background-color: #ffc72c;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <table id="display_table" class="table-hover table-responsive table table-bordered">
-      <thead>
-        <tr id = "table_headers">
-          <th>Avatar</th>
-          <th id="names">Names</th>
-          <th id="rep_names">Repository Names</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <div class="container">
+        <table id="display_table" class="table-hover table-responsive">
+            <thead>
+                <tr id = "table_headers">
+                    <th>Avatar</th>
+                    <th id="names">Names<span class="glyphicon glyphicon-sort"></span></th>
+                    <th id="rep_names">Repository Names<span id="secondIcon" class="glyphicon glyphicon-sort"></span></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </body>
 </html>
